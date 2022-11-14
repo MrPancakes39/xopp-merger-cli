@@ -6,6 +6,7 @@ use std::io::{self, Read, Write};
 enum MergeError {
     LengthError,
     IOError(io::Error),
+    FormatError,
 }
 
 impl From<io::Error> for MergeError {
@@ -33,13 +34,19 @@ fn merge_files(file_list: Vec<&str>, path: &str) -> Result<(), MergeError> {
 
         if i == 0 {
             // find the end of first file
-            let n = s.find("</xournal>").unwrap();
-            merged = (&s[..n]).to_string(); // without end tag
+            let n = s.find("</xournal>");
+            if n.is_none() {
+                return Err(MergeError::FormatError);
+            }
+            merged = (&s[..n.unwrap()]).to_string(); // without end tag
         } else {
             // find the pages  of file
-            let st = s.find("<page").unwrap();
-            let en = s.find("</xournal>").unwrap();
-            merged.push_str(&s[st..en])
+            let st = s.find("<page");
+            let en = s.find("</xournal>");
+            if st.is_none() || en.is_none() {
+                return Err(MergeError::FormatError);
+            }
+            merged.push_str(&s[st.unwrap()..en.unwrap()])
         }
     }
     merged.push_str("</xournal>"); // adds end tag back
