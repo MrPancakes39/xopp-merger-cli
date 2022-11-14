@@ -16,7 +16,7 @@ impl From<anyhow::Error> for MergeError {
     }
 }
 
-pub fn merge_files(file_list: Vec<&str>, path: &str) -> Result<(), MergeError> {
+pub fn merge_files(file_list: &[String], path: &str) -> Result<(), MergeError> {
     if file_list.len() < 2 {
         return Err(MergeError::LengthError);
     }
