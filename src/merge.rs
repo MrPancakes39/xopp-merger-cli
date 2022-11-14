@@ -1,16 +1,17 @@
+use anyhow::{Context, Result};
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use std::fs::File;
-use std::io::{self, Read, Write};
+use std::io::{Read, Write};
 
 #[derive(Debug)]
 pub enum MergeError {
     LengthError,
-    IOError(io::Error),
+    IOError(anyhow::Error),
     FormatError,
 }
 
-impl From<io::Error> for MergeError {
-    fn from(err: io::Error) -> Self {
+impl From<anyhow::Error> for MergeError {
+    fn from(err: anyhow::Error) -> Self {
         MergeError::IOError(err)
     }
 }
@@ -27,13 +28,13 @@ pub fn merge_files(file_list: Vec<&str>, path: &str) -> Result<(), MergeError> {
         for (i, file) in file_list.into_iter().enumerate() {
             // read the file as bytes
             byte_buffer.clear();
-            let mut f = File::open(file)?;
-            f.read_to_end(&mut byte_buffer)?;
+            let mut f = File::open(file).with_context(|| format!("Failed to open: {file}"))?;
+            f.read_to_end(&mut byte_buffer).with_context(|| format!("Failed to read: {file}"))?;
 
             // decompress the file to xml
             char_buffer.clear();
             let mut d = GzDecoder::new(&byte_buffer[..]);
-            d.read_to_string(&mut char_buffer)?;
+            d.read_to_string(&mut char_buffer).context("Failed to get decompressed data.")?;
 
             if i == 0 {
                 // find the end of first file
@@ -57,12 +58,12 @@ pub fn merge_files(file_list: Vec<&str>, path: &str) -> Result<(), MergeError> {
 
     // compress xml string
     let mut e = GzEncoder::new(Vec::new(), Compression::default());
-    e.write_all(merged.as_bytes())?;
-    let compressed = e.finish()?;
+    e.write_all(merged.as_bytes()).context("Failed to compress data.")?;
+    let compressed = e.finish().context("Failed to get compressed data.")?;
 
     // save it
-    let mut f = File::create(path)?;
-    f.write_all(&compressed[..])?;
+    let mut f = File::create(path).with_context(|| format!("Failed to save file in {path}"))?;
+    f.write_all(&compressed[..]).context("Failed to save merged file.")?;
 
     Ok(())
 }

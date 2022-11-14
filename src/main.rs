@@ -1,5 +1,6 @@
 mod merge;
 
+use anyhow::Result;
 use merge::{merge_files, MergeError};
 
 fn main() -> Result<(), MergeError> {
