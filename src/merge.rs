@@ -21,35 +21,39 @@ pub fn merge_files(file_list: Vec<&str>, path: &str) -> Result<(), MergeError> {
     }
 
     let mut merged = String::new();
-    for (i, file) in file_list.into_iter().enumerate() {
-        // read the file as bytes
-        let mut f = File::open(file)?;
-        let mut buf: Vec<u8> = Vec::new();
-        f.read_to_end(&mut buf)?;
+    {
+        let mut byte_buffer: Vec<u8> = Vec::new();
+        let mut char_buffer: String = String::new();
+        for (i, file) in file_list.into_iter().enumerate() {
+            // read the file as bytes
+            byte_buffer.clear();
+            let mut f = File::open(file)?;
+            f.read_to_end(&mut byte_buffer)?;
 
-        // decompress the file to xml
-        let mut d = GzDecoder::new(&buf[..]);
-        let mut s = String::new();
-        d.read_to_string(&mut s)?;
+            // decompress the file to xml
+            char_buffer.clear();
+            let mut d = GzDecoder::new(&byte_buffer[..]);
+            d.read_to_string(&mut char_buffer)?;
 
-        if i == 0 {
-            // find the end of first file
-            let n = s.find("</xournal>");
-            if n.is_none() {
-                return Err(MergeError::FormatError);
+            if i == 0 {
+                // find the end of first file
+                let n = char_buffer.find("</xournal>");
+                if n.is_none() {
+                    return Err(MergeError::FormatError);
+                }
+                merged = (&char_buffer[..n.unwrap()]).to_string(); // without end tag
+            } else {
+                // find the pages  of file
+                let st = char_buffer.find("<page");
+                let en = char_buffer.find("</xournal>");
+                if st.is_none() || en.is_none() {
+                    return Err(MergeError::FormatError);
+                }
+                merged.push_str(&char_buffer[st.unwrap()..en.unwrap()])
             }
-            merged = (&s[..n.unwrap()]).to_string(); // without end tag
-        } else {
-            // find the pages  of file
-            let st = s.find("<page");
-            let en = s.find("</xournal>");
-            if st.is_none() || en.is_none() {
-                return Err(MergeError::FormatError);
-            }
-            merged.push_str(&s[st.unwrap()..en.unwrap()])
         }
+        merged.push_str("</xournal>"); // adds end tag back
     }
-    merged.push_str("</xournal>"); // adds end tag back
 
     // compress xml string
     let mut e = GzEncoder::new(Vec::new(), Compression::default());
