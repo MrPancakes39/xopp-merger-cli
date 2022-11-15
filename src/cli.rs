@@ -24,7 +24,7 @@ pub enum ParseError {
     NotEnoughArgs,
 }
 
-fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
+fn parse_args(args: &[String]) -> Result<(&[String], String), ParseError> {
     // command help
     if args.len() == 2 {
         match &args[1][..] {
@@ -41,9 +41,17 @@ fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
     // get input and output
     let n = args.len();
     let input = &args[1..n - 1];
-    let output = &args[n - 1];
+    let output = make_filepath(&args[n - 1]);
 
     Ok((input, output))
+}
+
+fn make_filepath(path: &String) -> String {
+    let mut filepath = path.clone();
+    if !filepath.ends_with(".xopp") {
+        filepath.push_str(".xopp")
+    }
+    filepath
 }
 
 fn version() {
