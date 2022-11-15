@@ -1,3 +1,5 @@
+use std::process;
+
 #[derive(Debug)]
 pub enum ParseError {
     NeedHelp,
@@ -22,4 +24,7 @@ pub fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
     Ok((input, output))
 }
 
-pub fn handle_error(err: ParseError) {}
+pub fn handle_error(err: ParseError) -> ! {
+    println!("{:?}", err);
+    process::exit(1);
+}
