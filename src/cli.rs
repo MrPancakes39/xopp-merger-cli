@@ -1,9 +1,15 @@
+use std::process;
+
 use crate::errors::ErrorHandler;
 use crate::merge::merge_files;
 
 pub fn run(args: Vec<String>) {
     let (input, output) = parse_args(&args).unwrap_or_else(|err| match err {
         ParseError::NeedHelp => display_help(),
+        ParseError::NeedVersion => {
+            version();
+            process::exit(0);
+        }
         _ => err.handle_error(),
     });
     merge_files(input, &output).unwrap_or_else(|err| {
@@ -14,13 +20,18 @@ pub fn run(args: Vec<String>) {
 #[derive(Debug)]
 pub enum ParseError {
     NeedHelp,
+    NeedVersion,
     NotEnoughArgs,
 }
 
 fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
     // command help
-    if args.len() == 2 && args[1] == "help" {
-        return Err(ParseError::NeedHelp);
+    if args.len() == 2 {
+        match &args[1][..] {
+            "help" => return Err(ParseError::NeedHelp),
+            "version" => return Err(ParseError::NeedVersion),
+            _ => {}
+        }
     }
     // min: command input1 input2 output
     if args.len() < 4 {
@@ -67,5 +78,5 @@ SUBCOMMANDS:
         Print version information."#
     );
 
-    std::process::exit(0);
+    process::exit(0);
 }
