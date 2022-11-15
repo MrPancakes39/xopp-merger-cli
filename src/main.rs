@@ -8,7 +8,7 @@ use std::env;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let (input, output) = parse_args(&args).unwrap_or_else(|err| {
-        handle_error(err);
+        err.handle_error();
     });
     merge_files(input, &output).unwrap();
 }

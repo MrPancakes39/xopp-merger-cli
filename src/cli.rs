@@ -24,7 +24,13 @@ pub fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
     Ok((input, output))
 }
 
-pub fn handle_error(err: ParseError) -> ! {
-    println!("{:?}", err);
-    process::exit(1);
+pub trait ErrorHandler {
+    fn handle_error(&self) -> !;
+}
+
+impl ErrorHandler for ParseError {
+    fn handle_error(&self) -> ! {
+        println!("{:?}", self);
+        process::exit(1);
+    }
 }
