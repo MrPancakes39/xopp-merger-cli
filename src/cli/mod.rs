@@ -1,13 +1,15 @@
 mod merge;
 
-use merge::merge_files;
+use merge::{merge_files, MergeError};
 use std::process;
 
 pub fn run(args: Vec<String>) {
     let (input, output) = parse_args(&args).unwrap_or_else(|err| {
         err.handle_error();
     });
-    merge_files(input, &output).unwrap();
+    merge_files(input, &output).unwrap_or_else(|err| {
+        err.handle_error();
+    });
 }
 
 #[derive(Debug)]
@@ -39,6 +41,13 @@ trait ErrorHandler {
 }
 
 impl ErrorHandler for ParseError {
+    fn handle_error(&self) -> ! {
+        println!("{:?}", self);
+        process::exit(1);
+    }
+}
+
+impl ErrorHandler for MergeError {
     fn handle_error(&self) -> ! {
         println!("{:?}", self);
         process::exit(1);
