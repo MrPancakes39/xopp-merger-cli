@@ -8,7 +8,11 @@ pub trait ErrorHandler {
 
 impl ErrorHandler for ParseError {
     fn handle_error(&self) -> ! {
-        println!("{:?}", self);
+        eprint!("[xopp-merger error]: ");
+        match self {
+            Self::NeedHelp | Self::NeedVersion => {}
+            Self::NotEnoughArgs => eprintln!("Not enough input arguments."),
+        }
         process::exit(1);
     }
 }
