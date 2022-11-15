@@ -1,5 +1,5 @@
-use crate::merge::{merge_files, MergeError};
-use std::process;
+use crate::errors::ErrorHandler;
+use crate::merge::merge_files;
 
 pub fn run(args: Vec<String>) {
     let (input, output) = parse_args(&args).unwrap_or_else(|err| {
@@ -11,7 +11,7 @@ pub fn run(args: Vec<String>) {
 }
 
 #[derive(Debug)]
-enum ParseError {
+pub enum ParseError {
     NeedHelp,
     NotEnoughArgs,
 }
@@ -32,22 +32,4 @@ fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
     let output = &args[n - 1];
 
     Ok((input, output))
-}
-
-trait ErrorHandler {
-    fn handle_error(&self) -> !;
-}
-
-impl ErrorHandler for ParseError {
-    fn handle_error(&self) -> ! {
-        println!("{:?}", self);
-        process::exit(1);
-    }
-}
-
-impl ErrorHandler for MergeError {
-    fn handle_error(&self) -> ! {
-        println!("{:?}", self);
-        process::exit(1);
-    }
 }
