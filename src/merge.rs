@@ -7,7 +7,7 @@ use std::io::{Read, Write};
 pub enum MergeError {
     LengthError,
     IOError(anyhow::Error),
-    FormatError,
+    FormatError(String),
 }
 
 impl From<anyhow::Error> for MergeError {
@@ -28,19 +28,21 @@ pub fn merge_files(file_list: &[String], path: &str) -> Result<(), MergeError> {
         for (i, file) in file_list.into_iter().enumerate() {
             // read the file as bytes
             byte_buffer.clear();
-            let mut f = File::open(file).with_context(|| format!("Failed to open: {file}"))?;
-            f.read_to_end(&mut byte_buffer).with_context(|| format!("Failed to read: {file}"))?;
+            let mut f = File::open(file).with_context(|| format!("Failed to open: '{file}'"))?;
+            f.read_to_end(&mut byte_buffer)
+                .with_context(|| format!("Failed to read: '{file}'"))?;
 
             // decompress the file to xml
             char_buffer.clear();
             let mut d = GzDecoder::new(&byte_buffer[..]);
-            d.read_to_string(&mut char_buffer).context("Failed to get decompressed data.")?;
+            d.read_to_string(&mut char_buffer)
+                .with_context(|| format!("Failed to get decompressed data of '{file}'"))?;
 
             if i == 0 {
                 // find the end of first file
                 let n = char_buffer.find("</xournal>");
                 if n.is_none() {
-                    return Err(MergeError::FormatError);
+                    return Err(MergeError::FormatError(file.clone()));
                 }
                 merged = (&char_buffer[..n.unwrap()]).to_string(); // without end tag
             } else {
@@ -48,7 +50,7 @@ pub fn merge_files(file_list: &[String], path: &str) -> Result<(), MergeError> {
                 let st = char_buffer.find("<page");
                 let en = char_buffer.find("</xournal>");
                 if st.is_none() || en.is_none() {
-                    return Err(MergeError::FormatError);
+                    return Err(MergeError::FormatError(file.clone()));
                 }
                 merged.push_str(&char_buffer[st.unwrap()..en.unwrap()])
             }
@@ -58,12 +60,14 @@ pub fn merge_files(file_list: &[String], path: &str) -> Result<(), MergeError> {
 
     // compress xml string
     let mut e = GzEncoder::new(Vec::new(), Compression::default());
-    e.write_all(merged.as_bytes()).context("Failed to compress data.")?;
+    e.write_all(merged.as_bytes())
+        .context("Failed to compress data.")?;
     let compressed = e.finish().context("Failed to get compressed data.")?;
 
     // save it
     let mut f = File::create(path).with_context(|| format!("Failed to save file in {path}"))?;
-    f.write_all(&compressed[..]).context("Failed to save merged file.")?;
+    f.write_all(&compressed[..])
+        .context("Failed to save merged file.")?;
 
     Ok(())
 }

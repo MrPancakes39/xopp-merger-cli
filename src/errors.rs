@@ -20,7 +20,17 @@ impl ErrorHandler for ParseError {
 
 impl ErrorHandler for MergeError {
     fn handle_error(&self) -> ! {
-        println!("{:?}", self);
+        eprint!("[xopp-merger error]: ");
+        match self {
+            Self::LengthError => eprintln!("Not enough input files."),
+            Self::IOError(err) => {
+                eprintln!("{}.", err);
+                eprintln!("                     {}.", err.root_cause())
+            }
+            Self::FormatError(file) => {
+                eprintln!("File '{file}' is not in the right format.")
+            }
+        }
         process::exit(1);
     }
 }
