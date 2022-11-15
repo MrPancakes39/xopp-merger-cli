@@ -1,4 +1,5 @@
 mod cli;
+mod merge;
 
 use cli::run;
 use std::env;

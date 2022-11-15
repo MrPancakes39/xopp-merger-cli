@@ -1,6 +1,4 @@
-mod merge;
-
-use merge::{merge_files, MergeError};
+use crate::merge::{merge_files, MergeError};
 use std::process;
 
 pub fn run(args: Vec<String>) {
