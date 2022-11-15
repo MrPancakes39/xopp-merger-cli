@@ -33,3 +33,12 @@ fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
 
     Ok((input, output))
 }
+
+fn version() {
+    println!(
+        "{} {} ({})",
+        include_str!("name.txt"),
+        include_str!("version.txt"),
+        include_str!("commit.txt")
+    );
+}
