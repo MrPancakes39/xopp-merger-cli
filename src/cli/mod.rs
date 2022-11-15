@@ -1,12 +1,22 @@
+mod merge;
+
+use merge::merge_files;
 use std::process;
 
+pub fn run(args: Vec<String>) {
+    let (input, output) = parse_args(&args).unwrap_or_else(|err| {
+        err.handle_error();
+    });
+    merge_files(input, &output).unwrap();
+}
+
 #[derive(Debug)]
-pub enum ParseError {
+enum ParseError {
     NeedHelp,
     NotEnoughArgs,
 }
 
-pub fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
+fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
     // command help
     if args.len() == 2 && args[1] == "help" {
         return Err(ParseError::NeedHelp);
@@ -24,7 +34,7 @@ pub fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
     Ok((input, output))
 }
 
-pub trait ErrorHandler {
+trait ErrorHandler {
     fn handle_error(&self) -> !;
 }
 
