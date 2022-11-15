@@ -2,8 +2,9 @@ use crate::errors::ErrorHandler;
 use crate::merge::merge_files;
 
 pub fn run(args: Vec<String>) {
-    let (input, output) = parse_args(&args).unwrap_or_else(|err| {
-        err.handle_error();
+    let (input, output) = parse_args(&args).unwrap_or_else(|err| match err {
+        ParseError::NeedHelp => display_help(),
+        _ => err.handle_error(),
     });
     merge_files(input, &output).unwrap_or_else(|err| {
         err.handle_error();
@@ -34,10 +35,37 @@ fn parse_args(args: &[String]) -> Result<(&[String], &String), ParseError> {
     Ok((input, output))
 }
 
-// fn version() {
-//     println!(
-//         "xopp-merger {} ({})",
-//         include_str!("version.txt"),
-//         include_str!("commit.txt")
-//     );
-// }
+fn version() {
+    println!(
+        "xopp-merger {} ({})",
+        include_str!("version.txt"),
+        include_str!("commit.txt")
+    );
+}
+
+fn display_help() -> ! {
+    version();
+    println!(
+        r#"A small tool to merge multiple xournal notebooks.
+
+USAGE:
+    xopp-merger file1.xopp file2.xopp... output.xopp
+    xopp-merger subcommand
+
+ARGS:
+    file1.xopp, file2.xopp...
+        The notebooks to merge.
+
+    output.xopp
+        The path to save the merged files.
+
+SUBCOMMANDS:
+    help
+        Print this help message.
+
+    version
+        Print version information."#
+    );
+
+    std::process::exit(0);
+}
