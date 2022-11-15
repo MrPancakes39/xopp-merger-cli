@@ -1,4 +1,4 @@
-use std::process;
+use std::{path::Path, process};
 
 use crate::errors::ErrorHandler;
 use crate::merge::merge_files;
@@ -22,6 +22,7 @@ pub enum ParseError {
     NeedHelp,
     NeedVersion,
     NotEnoughArgs,
+    PathError(String),
 }
 
 fn parse_args(args: &[String]) -> Result<(&[String], String), ParseError> {
@@ -41,7 +42,25 @@ fn parse_args(args: &[String]) -> Result<(&[String], String), ParseError> {
     // get input and output
     let n = args.len();
     let input = &args[1..n - 1];
-    let output = make_filepath(&args[n - 1]);
+
+    let output = match &args[n - 1][..] {
+        "help" => return Err(ParseError::NeedHelp),
+        "version" => return Err(ParseError::NeedVersion),
+        _ => make_filepath(&args[n - 1]),
+    };
+
+    // check the input arguments
+    for i in input {
+        match &i[..] {
+            "help" => return Err(ParseError::NeedHelp),
+            "version" => return Err(ParseError::NeedVersion),
+            _ => {
+                if !Path::new(i).exists() {
+                    return Err(ParseError::PathError(i.clone()));
+                }
+            }
+        }
+    }
 
     Ok((input, output))
 }

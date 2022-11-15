@@ -12,6 +12,7 @@ impl ErrorHandler for ParseError {
         match self {
             Self::NeedHelp | Self::NeedVersion => {}
             Self::NotEnoughArgs => eprintln!("Not enough input arguments."),
+            Self::PathError(path) => eprintln!("Path doesn't exist: {}", path),
         }
         process::exit(1);
     }
